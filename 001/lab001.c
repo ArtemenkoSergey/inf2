@@ -33,19 +33,22 @@ int main(int argc, char *argv[])
         int buf_len = 1024;
         buf = (char*)malloc(sizeof(char) * buf_len+1);
         fgets(buf, buf_len, stdin);
-        for (char*p = buf; *p!='\0'; p++, str_len++);
+        for (char*p = buf; *p!='\n'; p++, str_len++);
         str = (char*)malloc(sizeof(char) * (++str_len));
         char* dst = str;
-        for (char* src = buf; *src!='\0'; src++, dst++)
+        for (char* src = buf; *src!='\n'; src++, dst++)
             *dst = *src;
         *(++dst)='\0';
         free(buf);
     }
     // выводим начальный вариант строки на экран
-    printf("%s\n", str);
+    // printf("%s\n", str);
+    fputs(str, stdout);
+    fputc('\n', stdout);
     replase(str);
     // выводим измененный вариант строки на экран
-    printf("%s\n", str);
+    fputs(str, stdout);
+    fputc('\n', stdout);
     free(str);
     return 0;
 }
@@ -67,12 +70,12 @@ void replase(char* str)
                 for (int i = c; i > 10; i/=10, l*=10);
                 for  (; l>0 ; l/=10)
                 {
-                    *dst++ = c/l+'0';
+                    *(dst++) = c/l+'0';
                     c=c%l;
                 }
                 c=1;   
             }
-            *dst++ = *src;
+            *(dst++) = *src;
         }
     }
     *dst='\0';
