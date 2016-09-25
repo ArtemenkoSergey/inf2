@@ -2,15 +2,15 @@
 В  структурированной переменной предусмотреть способ отметки ее как не содержащей данных (т.е. "пустой").
 Функции должны работать с массивом структур или с отдельной структурой через указатели,
 а также при необходимости возвращать указатель на структуру. В перечень функций входят:
-    - «очистка» структурированных переменных;
-    - поиск свободной структурированной переменной;
-    - ввод элементов (полей) структуры с клавиатуры;
-    - вывод элементов (полей) структуры с клавиатуры;
+    + «очистка» структурированных переменных;
+    + поиск свободной структурированной переменной;
+    + ввод элементов (полей) структуры с клавиатуры;
+    + вывод элементов (полей) структуры с клавиатуры;
     - поиск в массиве структуры и минимальным значением  заданного поля;
     - сортировка массива  структур в порядке возрастания заданного поля
         сортировке можно использовать тот факт, что в Си++ разрешается присваивание структурированных переменных);
     - поиск в массиве структур элемента с заданным значением поля или с наиболее близким к нему по значению. 
-    - удаление заданного элемента;
+    + удаление заданного элемента;
     - изменение (редактирование) заданного элемента.
     - вычисление с проверкой и использованием всех элементов массива по заданному условию и формуле
         (например, общая сумма на всех счетах) -  дается индивидуально.
@@ -58,8 +58,10 @@ int ArrayInit(struct Array* A, int len);
 int ArrayClear(struct Array*);
 int FindFree(struct Array*);
 int AddtoArray(struct Array*, struct Item*);
-int DelfromArray(struct Array*, int index);
+int ArrayAddFromFile(struct Array* A, FILE* F);
+int DeleleFromArray(struct Array*, int index);
 void ArrayShow(struct Array*, FILE*);
+void ArrayTableShow(struct Array*, FILE*);
 
 int ArraySave(struct Array*, FILE*);
 int ArrayInitFromFile(struct Array*, FILE*);
@@ -68,8 +70,6 @@ int ArrayInitFromFile(struct Array*, FILE*);
 struct Item* InitFromStdin();
 char* ItemToString(struct Item*, char*, size_t);
 struct Item* InitFromStr(char*);
-int ItemToBlok(struct Item* item, unsigned char* buf, int buf_size);
-struct Item* InitFromBlok(char*, int size);
 
 int ShowItem(struct Item*, FILE*);
 int DeleteItem(struct Item*);
@@ -81,28 +81,41 @@ int WDaysToStr(unsigned char wd, char* str, int len);
 
 //Работа со временем
 int TimeFromStr(struct tm*, char*);
-// int StrToTime(char*);
 
 // вспомогательные функции
+
+// ввод имени файла со стандартного ввода
+// входные параметры:
+//      указатель на строку в которую будет записано имя файла
+// возвращает: указатель на строку с именем файла
 char* InputFileName(char*);
-// char* IntToStr(char*, int);
+
+// длинна строки с символах на экране (UTF-8)
+// входные параметры:
+//      строка
+//возвращает: количество символов которое будет отображено на экране
+int mbstrlen(const char*);
+
+
+char* IntToStr(char* str, int num);
 
 int main(int argc, char const *argv[])
 {
     setlocale(LC_ALL, "ru_RU.utf8");
 
+    // char* str = "фычс";
+    // printf("%d %d\n", mbstrlen(str), strlen(str));
+
+    // int colwidth[6] = {1, 0, 0, 2, 5, 5};
+    // const char* lineformat = "+-%*s-+-%*s-+-%*s-+-%*s-+-%*s-+-%*s-+\n";
+    // printf(lineformat, 5, "-", 5, "-", 5, "", 5, "", 6, "", 6, "");
     
     struct Array* A = (struct Array*)malloc(sizeof(struct Array));
-    ArrayInit(A, 10);
-    AddtoArray(A, InitFromStdin());
-    AddtoArray(A, InitFromStdin());
-    AddtoArray(A, InitFromStdin());
-    AddtoArray(A, InitFromStdin());
-    AddtoArray(A, InitFromStdin());
-    // ArrayInitFromFile(A,NULL);
-    ArrayShow(A, stdout);
-
-    // ArraySave(A, NULL);
+    ArrayInitFromFile(A,NULL);
+    // ArrayShow(A, stdout);
+    ArrayAddFromFile(A, NULL);
+    ArrayTableShow(A, stdout);
+    
 
     ArrayClear(A);
     free(A);
@@ -143,7 +156,7 @@ int ArrayInitFromFile(struct Array* A, FILE* F)
     A->items = (struct Item**)malloc(sizeof(struct Item*)*A->len);
     if(A->items)
     {
-        for (int i = 0; i < A->len; ++i)
+        for (int i = 0; i < A->len && !feof(F); ++i)
         {
             fgets(buffer,BUFFER_SIZE,F);
             if(buffer[0]=='\n')
@@ -190,6 +203,42 @@ int AddtoArray(struct Array* A, struct Item* item)
     return i;
 }
 
+int ArrayAddFromFile(struct Array* A, FILE* F)
+{
+    int fileopen = 0;
+    int err = 0;
+
+    char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
+    
+    if (F==NULL)
+    {   
+        fileopen = 1;
+        F = fopen(InputFileName(filename), "r");
+        // printf("file opend %s\n", filename);
+    }
+    fgets(buffer, BUFFER_SIZE, F);
+    int i;
+    while((i=FindFree(A))>=0 && !feof(F))
+    {   
+        fgets(buffer,BUFFER_SIZE,F);
+        if(buffer[0]!='\n')
+            A->items[i] = InitFromStr(buffer);
+    }  
+
+    err = !feof(F);
+    if (fileopen)
+        fclose(F); 
+    return err;
+}
+
+int DeleteFromArray(struct Array* A, int index)
+{
+    if (A->items[index]!=NULL)
+        DeleteItem(A->items[index]);
+    else
+        return -1;
+    return 0;
+}
 void ArrayShow(struct Array* A, FILE* F)
 {
     for (int i = 0; i < A->len; ++i)
@@ -199,6 +248,238 @@ void ArrayShow(struct Array* A, FILE* F)
         else
             fprintf(F, "%02d пустой элемент\n", i);
     }
+}
+
+void ArrayTableShow(struct Array* A, FILE* F)
+{
+    const char* empryitem = "Пустой элемент";
+    const char* title[6] = {"", "Номер поезда", "Пункт назначения", "Дни следования", "Время прибытия", "Время стоянки"};
+    int cw[6];
+    for (int i = 0; i < 6; ++i)
+        cw[i] = mbstrlen(title[i]);
+    int tmp = 0;
+    int len;
+
+    // ширина первого стролбца
+    for (int i = A->len-1; i > 0; i/=10, tmp++);
+    if (tmp>cw[0])
+        cw[0] = tmp;
+    for (int i = 0; i < A->len; ++i)
+    {
+        if (A->items[i]!=NULL)
+        {
+            tmp = mbstrlen(A->items[i]->train_num);
+            if (tmp > cw[1])
+                cw[1] = tmp;
+            tmp = mbstrlen(A->items[i]->dst);
+            if (tmp > cw[2])
+                cw[2] = tmp;
+            tmp = 0;
+            for (int k = 1; k < 0x80; k = k << 1)
+                if (k & A->items[i]->w_days)
+                    tmp++;
+            tmp = tmp*3-1;
+            if (tmp>cw[3])
+                cw[3] = tmp;
+        }
+    }
+
+    tmp = cw[1]+cw[2]+3;
+    int d = mbstrlen(empryitem);
+    if (tmp < d)
+    {
+        d = d - tmp;
+        cw[1] += d/2;
+        cw[2] += d/2 + d%2;
+    }
+
+    tmp = 5;
+    for (int i = 0; i < 6; ++i)
+        tmp+=cw[i]+3;
+    char* rowseporator = (char*)malloc(sizeof(char)*tmp);
+    char* p = rowseporator;
+    *(p++) = '+';
+    for (int i = 0; i < 6; ++i)
+    {
+        *(p++) = '-';
+        for (int k = 0; k < cw[i]; ++k)
+            *(p++) = '-';
+        *(p++) = '-';
+        *(p++) = '+';
+    }
+    *(p++) = '\n';
+    *(p++) = '\0';
+
+    
+    char* empryline = (char*)malloc(sizeof(char)*BUFFER_SIZE);
+    p = empryline;
+    *(p++) = '|';
+    for (int k = 0; k < cw[0]+2; ++k)
+            *(p++) = ' ';
+    *(p++) = '|';
+    *(p++) = ' ';
+    tmp = strlen(empryitem);
+    strncpy(p, empryitem, tmp);
+    p+=tmp;
+    for (int k = 0; k < cw[1]+cw[2]-mbstrlen(empryitem)+4; ++k)
+            *(p++) = ' ';
+    *(p++) = '|';
+    for (int i = 3; i < 6; ++i)
+    {
+        *(p++) = ' ';
+        for (int k = 0; k < cw[i]; ++k)
+            *(p++) = ' ';
+        *(p++) = ' ';
+        *(p++) = '|';
+    }
+    *(p++) = '\n';
+    *(p++) = '\0';
+
+
+
+    char* rowline = (char*)malloc(sizeof(char)*BUFFER_SIZE);
+    // составление троки шапки
+    p = rowline;
+    *(p++) = '|';
+    
+    for (int i = 0; i < 6; ++i)
+    {
+        len = strlen(title[i]);
+        tmp = mbstrlen(title[i]);
+        d = (cw[i]-tmp)/2 + (cw[i]-tmp)%2;
+        for (int k = 0; k < d+1; ++k)
+            *(p++) = ' ';
+        d -= (cw[i]-tmp)%2;
+        strncpy(p, title[i], len);
+        p+=len;
+        for (int k = 0; k < d+1; ++k)
+            *(p++) = ' ';
+        *(p++) = '|';
+    }
+    *(p++) = '\n';
+    *(p++) = '\0';     
+
+
+    // char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
+    // const char* fline = "| %*d | %*s | %-*s | %*s | %*s | %*s |\n";
+    // const char* empryfline = "| %*d | %*s | %*s | %*s | %*s |\n";
+    // printf(lineformat, cw[0], "", cw[1], "", cw[2], "", cw[3], "", cw[4], "", cw[5], "");
+    char* index = (char*)malloc(sizeof(char)*(cw[0]*2+1));
+    char* w_days = (char*)malloc(sizeof(char)*(cw[3]*2+1));
+    char* arrival_time = (char*)malloc(sizeof(char)*(cw[4]*2+1));
+    char* station_time = (char*)malloc(sizeof(char)*(cw[5]*2+1));
+
+    fputs(rowseporator, F);
+    fputs(rowline,F);
+    fputs(rowseporator, F);
+    for (int i = 0; i < A->len; ++i)
+    {   
+        IntToStr(index, i);
+        if (A->items[i]!=NULL)
+        {   
+            p = rowline;
+            *(p++) = '|';
+            *(p++) = ' ';
+            len = strlen(index);
+            tmp = cw[0] - len;
+            for(;tmp>0;tmp--,*(p++)=' ');
+            strncpy(p, index, len); 
+            p += len;
+            
+            *(p++) = ' ';
+            *(p++) = '|';
+            *(p++) = ' ';
+            
+            len = strlen(A->items[i]->train_num);
+            for (int k = 0; k < cw[1]-mbstrlen(A->items[i]->train_num); ++k)
+                *(p++) = ' ';
+            strncpy(p, A->items[i]->train_num, len);
+            p+=len;
+            // for (int k = 0; k < cw[1]-mbstrlen(A->items[i]->train_num)+1; ++k)
+            //     *(p++) = ' ';
+            
+            *(p++) = ' ';
+            *(p++) = '|';
+            *(p++) = ' ';
+
+            len = strlen(A->items[i]->dst);
+            strncpy(p, A->items[i]->dst, len);
+            p+=len;
+            for (int k = 0; k < cw[2]-mbstrlen(A->items[i]->dst)+1; ++k)
+                *(p++) = ' ';
+            
+            *(p++) = '|';
+            *(p++) = ' ';
+
+
+            WDaysToStr(A->items[i]->w_days, w_days, cw[3]*2+1);
+            len = strlen(w_days);
+            tmp = mbstrlen(w_days);
+            d = (cw[3]-tmp)/2 + (cw[3]-tmp)%2;
+            for (int k = 0; k < d; ++k)
+                *(p++) = ' ';
+            d -= (cw[3]-tmp)%2;
+            strncpy(p, w_days, len);
+            p+=len;
+            for (int k = 0; k < d+1; ++k)
+                *(p++) = ' ';
+
+            *(p++) = '|';
+            *(p++) = ' ';
+
+            strftime(arrival_time, BUFFER_SIZE, "%R", A->items[i]->arrival_time);
+            len = strlen(arrival_time);
+            tmp = mbstrlen(arrival_time);
+            d = (cw[4]-tmp)/2 + (cw[4]-tmp)%2;
+            for (int k = 0; k < d; ++k)
+                *(p++) = ' ';
+            d -= (cw[4]-tmp)%2;
+            strncpy(p, arrival_time, len);
+            p+=len;
+            for (int k = 0; k < d+1; ++k)
+                *(p++) = ' ';
+
+            *(p++) = '|';
+            *(p++) = ' ';
+
+            strftime(station_time, BUFFER_SIZE, "%R", A->items[i]->station_time);
+            len = strlen(station_time);
+            tmp = mbstrlen(station_time);
+            d = (cw[5]-tmp)/2 + (cw[5]-tmp)%2;
+            for (int k = 0; k < d; ++k)
+                *(p++) = ' ';
+            d -= (cw[5]-tmp)%2;
+            strncpy(p, arrival_time, len);
+            p+=len;
+            for (int k = 0; k < d+1; ++k)
+                *(p++) = ' ';
+
+            *(p++) = '|';
+
+            // fprintf(F, fline, cw[0], i, cw[1], A->items[i]->train_num, cw[2], A->items[i]->dst, cw[3], w_days, cw[4], arrival_time, cw[5], station_time);
+            *(p++) = '\n';
+            *(p++) = '\0';
+            fprintf(F, "%s", rowline);
+        }
+        else
+        {            
+            // fprintf(F, empryfline, cw[0], i, cw[1]+cw[2]+3, empryitem, cw[3], "", cw[4], "", cw[5], "");
+            p = empryline + 2;
+            tmp = cw[0] - strlen(index);
+            for(;tmp>0;tmp--,*(p++)=' ');
+            strncpy(p, index, strlen(index)); 
+            fprintf(F, "%s", empryline);
+        }
+    }
+
+    fputs(rowseporator, F);
+
+    free(w_days);
+    free(arrival_time);
+    free(station_time);
+    free(rowseporator);
+    free(rowline);
+    free(empryline);
 }
 
 int ArraySave(struct Array* A, FILE* F)
@@ -427,10 +708,10 @@ struct Item* InitFromStr(char* str)
     
     int pos = 0;
     len=0;
-    while(str[len++]!='\t');
+    while(str[++len]!='\t');
     item->train_num = (char*)malloc(sizeof(char)*(len));
     strncpy(item->train_num, str, len);
-    item->train_num[len] = '\0';
+    item->train_num[len++] = '\0';
 
     pos+=len;
     str+=len;
@@ -439,7 +720,7 @@ struct Item* InitFromStr(char* str)
     while(str[++len]!='\t');
     item->dst = (char*)malloc(sizeof(char)*(len));
     strncpy(item->dst, str, len);
-    item->dst[len]='\0';
+    item->dst[len++]='\0';
 
     pos+=len;
     str+=len;
@@ -556,7 +837,7 @@ int WDaysToStr(unsigned char wd, char* str, int len)
             wd = wd & (~m);
         }
     }
-    *str = '\0';
+    *(--str) = '\0';
     free(buffer);
     if (wd)
         return -1;
@@ -631,3 +912,32 @@ char* InputFileName(char* name)
     return name;
 }
 
+int mbstrlen(const char* str)
+{
+    int c = 0;
+    int l = 1;
+    while(*str!='\0' && l>0)
+    {
+        l = mblen(str, 6);
+        str += l;
+        c++;
+    }
+    if (l>0)
+        return c;
+    else
+        return l;
+}
+
+char* IntToStr(char* str, int num)
+{
+    int l = 1;
+    char* p = str;
+    for (int i = num; i > 10; i/=10, l*=10);
+    for  (; l>0 ; l/=10)
+    {
+        *(p++) = num/l+'0';
+         num=num%l;
+    }
+    *p = '\0';
+    return str;
+}
