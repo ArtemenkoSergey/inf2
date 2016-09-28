@@ -30,7 +30,7 @@ char* FindPointer(char*, const char*, int);
 int main(int argc, char const *argv[])
 {
     char buf[BUFFER_SIZE];
-    int len = InputData(buf, 25);
+    int len = InputData(buf, BUFFER_SIZE);
     if (len > 0)
         ShowData(buf, BUFFER_SIZE);
     return 0;
@@ -112,16 +112,16 @@ int InputData(char* buf, int buf_size)
                     fgets(tc, ec-tc-i*sizeof(char)+1, stdin);
                     *(char**)(p) = tc;
                     // printf("set tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
-                    F(bc, ec-bc);            
+                    // F(bc, ec-bc);            
                     tc += strlen(tc);
-                    printf("set  p %p %02X %c\n",*(char**)p, (unsigned char)*p, *p );
+                    // printf("set  p %p %02X %c\n",*(char**)p, (unsigned char)*p, *p );
                     for (dc = tc; *tc!='\n' && tc>*(char**)p; tc--);
-                    printf("1set tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
+                    // printf("1set tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
                     if (*tc=='\n') 
                         *(tc++) = '\0';
                     else
                         tc = dc+1;
-                    printf("2set tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
+                    // printf("2set tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
                     p+=psize;
                 }
             }
@@ -135,7 +135,7 @@ int InputData(char* buf, int buf_size)
     {
         printf("Ввод дополнительных строк не требуется.\n");
     }
-    F(bc, ec-bc);
+    // F(bc, ec-bc);
     return tc-bc;
 }
 
