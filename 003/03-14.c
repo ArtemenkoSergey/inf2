@@ -1,160 +1,155 @@
-// Лаболаторная работа 3
+// Лабораторная работа 3
 
 // Разработать две функции,
 // 	одна из которых вводит с клавиатуры набор данных в произвольной последовательности
 // 	и размещает в памяти в переменном формате.
 // 	Другая функция читает  эти  данные  и выводит на экран.
-// Программа запрашивает и размещает в памяти несколько наборов данных при помощи первой функции,
-// а затем читает их и выводит на экран при помощи второй.
-// Размещение данных производить в статическом массиве байтов фиксированной размерности  с  контролем  его переполнения.
+// Программа запрашивает и размещает в памяти несколько наборов данных при помощи первой 
+// функции, а затем читает их и выводит на экран при помощи второй.
+// Размещение данных производить в статическом массиве байтов фиксированной размерности  
+// с  контролем  его переполнения.
 
 // 14. Область памяти представляет собой строку.
 // Если в ней встречается символ "%", то сразу же за ним находится указатель на другую (обычную) строку.
 // Все сроки располагаются в той же области памяти вслед за основной строкой.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>      // fputs(), fgets(), fputc(), fprintf(), fwrite(), fflush(), stdout, stdin
+#include <stdlib.h>     // mblen() 
+#include <string.h>     // strlen(), memmove()
+#include <locale.h>     // setlocale(LC_ALL, "ru_RU.utf8")
 
 
-#define BUFFER_SIZE 1024
-
+// функция ввода структуры данных со стандартного вввода
+// принимает:   указатель на первый байт структуры
+//              максимальный размер структуры
+// возвращает:  размер структуры данных или -1 если 
+//              ввод структуры данных завершился неудачей
 int InputData(char*, int);
-void ShowData(char*, int);
 
-// вспомагательные функции
-char* FindNextPointer(char*);
-char* FindPrevPointer(char*, const char*);
-char* FindPointer(char*, const char*, int);
+// функция вывода структуры данных на стандартный вывод
+// принимает:   указатель на первый байт структуры
+//              максимальный размер структуры
+void ShowData(char*);
+
+// вспомогательные функции
+
+// функция поиска символа в массиве символов
+// принимает:   искомый символ
+//              указатель на символ с которого начинать поиск
+//              указатель на символ на котором завершать поиск
+// возвращает:  указатель на первый найденный символ '%'
+//              или NULL если символ не найден
+char* FindChar(char, char*, char*);
+
+//выводит много байтовый символ в файл
+//принимает:    указатель на первый байт символа
+//возвращает:   длину выведенного символа или
+//              -1 если символ не соответствует категории LC_CTYPE
+int fputUTFchar(char*, FILE*);
 
 int main(int argc, char const *argv[])
 {
+    setlocale(LC_ALL, "ru_RU.utf8");
+
+    const int BUFFER_SIZE = 64;
     char buf[BUFFER_SIZE];
     int len = InputData(buf, BUFFER_SIZE);
     if (len > 0)
-        ShowData(buf, BUFFER_SIZE);
+        ShowData(buf);
     return 0;
 }
 
-void F(unsigned char* str, int n)
-{
-    for (int i = 0; i < n; ++i)
-    {
-        printf(" %c ", str[i]);
-    }
-    printf("\n");
-    for (int i = 0; i < n; ++i)
-    {
-        printf("%02X ", str[i]);
-    }
-    printf("\n");
-}
 
 int InputData(char* buf, int buf_size)
 {
-    char* bc = buf;
-    char* tc = bc;
-    char* ec = bc+buf_size;
-    int pos = 0;
-    int psize = sizeof(char*);
-    // strcpy(tc, "%a%\n");
-    //вводим остновную строку
+    char* bc = buf;         // первый символ структуры данных
+    char* tc = bc;          // текущий символ структуры данных
+    char* ec = bc+buf_size; // указатель на конец выделенного места
+    int psize = sizeof(char*); // размер указателя на символ
+    //вводим основную строку
     fputs("Введите основную строку: ", stdout);
     fgets(tc, buf_size, stdin);
-    fputs(tc,stdout);
     tc += strlen(tc);
     for (; *tc!='\n' && tc>=bc; tc--);
-    *tc = '\0';
-    
+    if (*tc=='\n') 
+        *tc = '\0';
     
     //считаем количество '%'
     int count = 0;
     for (tc = bc; *tc!='\0'; tc++)
         if (*tc == '%') count++;
-    char* dc = tc;
-    if (count != 0)
+    
+    if (count > 0)
     {
-            // если есть место хотябы на 1 символ для каждой дополнительной строки
+        char* dc = tc + count*psize; // указатель конец основной строки.
+            // если есть место хотя бы на 1 символ для каждой дополнительной строки
             
-            if (tc+count*psize < ec-count*sizeof(char))
+        if (tc+count*psize + count*sizeof(char)< ec)
+        {
+            
+            // выделяем место под указатели в строке
+            char* p;
+            for (int i = count; i > 0; i--)
             {
-                printf("Введите дополнительные строки (%d штук)\n", count);
-                // выделяем место под указатели в середине строки
-                char* p;
-                for (int i = count; i > 0; i--)
-                {
-                    // printf("move tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
-                    p = FindPrevPointer(tc-1, bc);
-                    if (p!=NULL)
-                        memmove(p+psize*i+1, p+1, tc-p),
-                        memset(p+psize*(i-1)+1, ' '+i, psize);
-                    else
-                        break;
-                    tc = p;
-
-                    // printf("move  p %p %02X %c\n",p, (unsigned char)*p, *p );
-                }
-
-                dc+=count*psize;
-                tc = dc;
-                *(tc++) = '\0';
-                
-                // F(bc, tc-bc);            
-                // вводим дополнительные строки
-                p = bc;
-                for (int i = count; i > 0 && tc <= ec; i--)
-                {
-                    p = FindNextPointer(p)+1;
-                    // printf("set  p %p %02X %c\n",p, (unsigned char)*p, *p );
-                    printf("%d (осталось %ld байт)", count+1-i, ec-tc-i*sizeof(char));
-                    // strcpy(tc, "|B|\n");
-                    // printf("%s", tc);
-                    fgets(tc, ec-tc-i*sizeof(char)+1, stdin);
-                    *(char**)(p) = tc;
-                    // printf("set tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
-                    // F(bc, ec-bc);            
-                    tc += strlen(tc);
-                    // printf("set  p %p %02X %c\n",*(char**)p, (unsigned char)*p, *p );
-                    for (dc = tc; *tc!='\n' && tc>*(char**)p; tc--);
-                    // printf("1set tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
-                    if (*tc=='\n') 
-                        *(tc++) = '\0';
-                    else
-                        tc = dc+1;
-                    // printf("2set tc %p %02X %c\n",tc, (unsigned char)*tc, *tc );
-                    p+=psize;
-                }
+                p = FindChar('%', tc-1, bc);
+                memmove(p+psize*i+1, p+1, tc-p);
+                tc = p;
             }
-            else
+
+            tc = dc;
+            *(tc++) = '\0';
+            
+            // вводим дополнительные строки
+            fprintf(stdout, "Введите дополнительные строки (%d штук)\n", count);
+            p = bc;
+            for (int i = count; i > 0 && tc <= ec-i*sizeof(char); i--)
             {
-                printf("не хватает места для дополнительны строк.\n");
-                return -1;
+                p = FindChar('%', p, ec)+1;
+                if (tc < ec-i*sizeof(char))
+                    fprintf(stdout, "%d (осталось %ld байт): ",count+1-i,ec-tc-i*sizeof(char));
+                fgets(tc, ec-tc-i*sizeof(char)+1, stdin);
+                *(char**)(p) = tc;
+                tc += strlen(tc);
+                for (dc = tc; *tc!='\n' && tc>*(char**)p; tc--);
+                if (*tc=='\n') 
+                    *(tc++) = '\0';
+                else
+                    tc = dc+1;
+                p+=psize;
             }
+        }
+        else
+        {
+            fprintf(stderr, "не хватает места для указателей и дополнительны строк.\n");
+            return -1;
+        }
     }
     else
     {
-        printf("Ввод дополнительных строк не требуется.\n");
+        fprintf(stdout, "Ввод дополнительных строк не требуется.\n");
     }
-    // F(bc, ec-bc);
     return tc-bc;
 }
 
-void ShowData(char* str, int buf_size)
+
+void ShowData(char* tc)
 {
-    char* ec = str+buf_size;
-    int psize = sizeof(char*);
-    while(*str!='\0' && str<ec)
+    //char* ec = tc+buf_size;
+    while(*tc!='\0')
     {
-        if (*str=='%')
+        if (*tc=='%')
         {   // выводим дополнительную строку
-            str++;
-            fputs(*(char**)str, stdout);
-            str += psize;
+            tc++;
+            fputs(*(char**)tc, stdout);
+            tc += sizeof(char**);
         }
         else
         {   // выводим символ основной строки
-            fputc(*str, stdout);
-            str++;
+            int l = fputUTFchar(tc, stdout);
+            if (l > 0)
+                tc += l;
+            else
+                tc++;
         }
 
     }
@@ -163,18 +158,26 @@ void ShowData(char* str, int buf_size)
 }
 
 
-char* FindNextPointer(char* p)
+
+char* FindChar(char ch, char* p, char* end)
 {
-    while(*(p)!='%' && *p !='\0') p++;
-    if (*p=='%')
+    int way = (end > p)? 1:-1;
+    while(p != end && *(p)!=ch) p+=way;
+    if (*p==ch)
         return p;
     return NULL;
 }
 
-char* FindPrevPointer(char* p, const char* start)
+
+int fputUTFchar(char* ch, FILE* F)
 {
-    while(p >= start && *(p)!='%') p--;
-    if (*p=='%')
-        return p;
-    return NULL;
+    int len = mblen(ch, 6);
+    char* end = ch + len;
+    while (ch < end)
+    {
+        fwrite(ch, sizeof(char), 1, F);
+        ch++;
+    }
+    fflush(F);
+    return len;
 }
