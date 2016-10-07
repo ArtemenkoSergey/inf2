@@ -30,7 +30,14 @@ int main(int argc, char const *argv[])
 {
     setlocale(LC_ALL, "ru_RU.utf8");
 
-    VA_Show("as *2 df *0 sd", 1, 2, 3);
+    char str[] = "as **4 2 *2 df *0 sd";
+    int va0 = 1;
+    int va1 = 2;
+    int va2 = 3;
+    printf("форматная строка: '%s'\n", str);
+    printf("не обязательные параметры переданные в функцию: %d %d %d\n", va0, va1, va2);
+    printf("результат работы функции:\n");
+    VA_Show(str, va0, va1, va2);
 
     return 0;
 }
@@ -55,8 +62,6 @@ void VA_Show(char* str, ...)
                     max_num = isNum;
                 p = t;
             }
-            else
-                p++;; 
             isNum = 0;
         }
         else
@@ -93,7 +98,7 @@ void VA_Show(char* str, ...)
                 p = t;
             }
             else
-                p += fputUTFchar(p, stdout); 
+                p += fputUTFchar(p, stdout);
             isNum = 0;
         }
         else
