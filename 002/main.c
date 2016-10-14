@@ -27,59 +27,31 @@
 #include <ctype.h>
 
 
-#include "array.h"
+// #include "array.h"
 #include "table.h"
+#include "item.h"
 
 #define BUFFER_SIZE 1024
 // char buffer[BUFFER_SIZE];
-
+#define FILENAMEMAXLEN 256
+char filename[FILENAMEMAXLEN] = "savedarray.txt";
 
 
 int main(int argc, char const *argv[])
 {
     setlocale(LC_ALL, "ru_RU.utf8");
+    int colQuantity = 5;
+    int colsSize[] = {6,6,6,6,6};
+    char colsAlignment[] = {1,1,0,-1,-1};
 
-    // char* str = "фычс";
-    // printf("%d %d\n", mbstrlen(str), strlen(str));
-
-    // int colwidth[6] = {1, 0, 0, 2, 5, 5};
-    // const char* lineformat = "+-%*s-+-%*s-+-%*s-+-%*s-+-%*s-+-%*s-+\n";
-    // printf(lineformat, 5, "-", 5, "-", 5, "", 5, "", 6, "", 6, "");
+    struct Table* tbl = createTable(colQuantity, colsSize, colsAlignment);
     
-    // struct Array* A = (struct Array*)malloc(sizeof(struct Array));
-    // ArrayInitFromFile(A,NULL);
-    // // ArrayShow(A, stdout);
-    // ArrayAddFromFile(A, NULL);
-    // ArrayTableShow(A, stdout);
-    
+    char* str = getRow(tbl, 2, "Ф","a");
 
-    // ArrayClear(A);
-    // free(A);
-    char cols[5][100] = {"колонка 1","aa", "колонка 1","col3","dsweqdeqwdqw123456789"};
-    // char cols[5][100] = {"col1","col2","col3","col4","dnewnceofhnaufcihbeauiwffcbiuewghifuwegiacv123sasw"};
-    int colqty = 5;
-    int cols_size[] = {5, 5, 5, 5, 5};
-    char col_agl[] = {-1, -1, 0, 1, -1};
-
-    struct Table* tbl = createtable(colqty, cols_size, col_agl);
-
-    char* str = (char*)malloc(sizeof(char)*tbl->_row_size+50);
-    char* p = str;
-    int s = 0;
-    for (int i = 0; i < 5; ++i)
-    {
-        strcpy(p,cols[i]);
-        s += strlen(p)+1;
-        printf("%s len %d\n",p, strlen(p));
-        p+=strlen(cols[i])+1;
-    }
-
-    printf("s %d\n", s);
-    printf("_row_size %d\n",tbl->_row_size );
-    fputseparatorrow(tbl, stdout);
-    fputrow(tbl, str, stdout);
-    fputseparatorrow(tbl, stdout);
-    deletetable(tbl);
+    fputSeparatorRow(tbl, stdout);
+    printf("%s", str);
+    fputSeparatorRow(tbl, stdout);
     free(str);
+
     return 0;
 }

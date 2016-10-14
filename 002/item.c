@@ -1,16 +1,10 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
-#include "others.h"
 #include "item.h"
 
 #ifndef BUFFER_SIZE
     #define BUFFER_SIZE 1024
 #endif
 
-struct Item* InitFromStdin()
+struct Item* initFromStdin()
 {
     int err;
     struct Item *item = (struct Item*)malloc(sizeof(struct Item));
@@ -29,9 +23,9 @@ struct Item* InitFromStdin()
     }
     len = strlen(buffer);
     for (; buffer[len]!='\n'; len--);
-    item->train_num = (char*)malloc(sizeof(char)*(len+1));
-    strncpy(item->train_num, buffer, len);
-    item->train_num[len] = '\0';
+    item->trainNum = (char*)malloc(sizeof(char)*(len+1));
+    strncpy(item->trainNum, buffer, len);
+    item->trainNum[len] = '\0';
     
     err =-1;
     while (err!=0)
@@ -45,9 +39,9 @@ struct Item* InitFromStdin()
     }
     len = strlen(buffer);
     for (; buffer[len]!='\n'; len--);
-    item->dst = (char*)malloc(sizeof(char)*(len+1));
-    strncpy(item->dst, buffer, len);
-    item->dst[len] = '\0';
+    item->route = (char*)malloc(sizeof(char)*(len+1));
+    strncpy(item->route, buffer, len);
+    item->route[len] = '\0';
     
     err = -1;
     while(err!=0)
@@ -57,8 +51,8 @@ struct Item* InitFromStdin()
         len = strlen(buffer);
         for (; buffer[len]!='\n'; len--);
         buffer[len]='\0';
-        item->w_days = StrToWDays(buffer);
-        if (item->w_days == 0)
+        item->weekDays = strToWeekDays(buffer);
+        if (item->weekDays == 0)
         {
             fputs("не правильно введенs дни следования\n", stdout);
         }
@@ -68,26 +62,24 @@ struct Item* InitFromStdin()
 
     // int hour;
     // int minute;
-    item->arrival_time = (struct tm*)malloc(sizeof(struct tm));
-    err = 1;
-    while (err!=0)
+    item->arrivalTime = NULL;
+    while (item->arrivalTime == NULL)
     {
         fputs("введите время прибытия (HH:MM): ", stdout);
         fgets(buffer, BUFFER_SIZE, stdin);
-        err = TimeFromStr(item->arrival_time, buffer);
-        if (err)
+        item->arrivalTime = strToTime(buffer);
+        if (item->arrivalTime == NULL)
             fputs("\nне правильно введено время\n", stdout);
     }
 
-    item->station_time = (struct tm*)malloc(sizeof(struct tm));
-    err = 1;
-    while (err!=0)
+    item->stationTime = NULL;
+    while (item->stationTime == NULL)
     {
         fputs("введите время стоянки (MM): ", stdout);
         // /err = fwscanf(stdin, "%d", &minute);
         fgets(buffer, BUFFER_SIZE, stdin);
-        err = TimeFromStr(item->station_time, buffer);
-        if (err)
+        item->stationTime = strToTime(buffer);
+        if (item->stationTime == NULL)
             fputs("\nне правильно введено время\n", stdout);
     }
 
@@ -95,153 +87,202 @@ struct Item* InitFromStdin()
     return item;
 }
 
-int DeleteItem(struct Item* item)
+void deleteItem(struct Item* item)
 {
-    free(item->train_num);
-    free(item->dst);
-    free(item->arrival_time);
-    free(item->station_time);
+    free(item->trainNum);
+    free(item->route);
+    free(item->arrivalTime);
+    free(item->stationTime);
     free(item);
-    return 0;
 }
 
-int ShowItem(struct Item* item, FILE* F)
+void showItem(struct Item* item, FILE* F)
 {
     char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
     fputs("\nномер поезда:\t\t", F);
-    fputs(item->train_num, F);
+    fputs(item->trainNum, F);
     
     fputs("\nпункт назначения:\t", F);
-    fputs(item->dst, F);
+    fputs(item->route, F);
 
     fputs("\nдни следования:\t\t", F);
-    // ShowWDays(item->w_days, F);
-    WDaysToStr(item->w_days, buffer, BUFFER_SIZE);
-    fputs(buffer, F);
+    // ShowWDays(item->weekDays, F);
+    char* weekDays = weekDaysToStr(item->weekDays);
+    fputs(weekDays, F);
+    free(weekDays);
 
     fputs("\nвремя прибытия:\t\t", F);
-    strftime(buffer, BUFFER_SIZE, "%R", item->arrival_time);
+    strftime(buffer, BUFFER_SIZE, "%R", item->arrivalTime);
     fputs(buffer, F);
 
     fputs("\nвремя стоянки:\t\t", F);
-    strftime(buffer, BUFFER_SIZE, "%R", item->station_time);
+    strftime(buffer, BUFFER_SIZE, "%R", item->stationTime);
     fputs(buffer, F);
 
     fputc('\n',F);
     free(buffer);
 }
 
-char* ItemToString(struct Item* item, char* str, size_t str_len)
+char* itemToStr(const struct Item* item, const char separator)
 {
-    // int pos = 0;
-    char* pos = str;
-    int len;
-    
     char* buffer;
-    int buf_size = 22;
-    buffer = (char*)malloc(sizeof(char)*buf_size);
+    int bufferSize = 25;
+    buffer = (char*)malloc(sizeof(char)*bufferSize);
 
-    len = strlen(item->train_num);
-    memcpy(pos, item->train_num, len);
-    pos += len;
-    // *(str+pos) = '\t';
-    *pos = '\t';
-    pos++;
+    // подсчитываем длинну строки.
+    int size = 0;
 
-    // printf("%p %d #%s#%d\n", pos, len, str, strlen(str));
+    size += strlen(item->trainNum) + 1;
+    size += strlen(item->route)+1;
+    
+    char* weekDays = weekDaysToStr(item->weekDays);
 
-    len = strlen(item->dst);
-    memcpy(pos, item->dst, len);
-    pos += len;
-    // *(str+pos) = '\t';
-    *pos = '\t';
-    pos++;
+    size += strlen(weekDays)+1;
 
-    // printf("%p %d #%s#%d\n", pos, len, str, strlen(str));
+    strftime(buffer, BUFFER_SIZE, "%R", item->arrivalTime);
+    int lenght = strlen(buffer);
+    *(buffer+lenght) = separator;
+    strftime(buffer+lenght+1, BUFFER_SIZE, "%R", item->stationTime);
 
-    WDaysToStr(item->w_days, buffer, BUFFER_SIZE);
-    len = strlen(buffer);
-    strncpy(pos, buffer, len);
-    pos += len;
-    // *(str+pos) = '\t';
-    *pos = '\t';
-    pos++;
+    size += strlen(buffer)+1;
 
-    // printf("%p %d #%s#%d\n", pos, len, str, strlen(str));
+    char* result = (char*)malloc(sizeof(char)*size);
+    char* pos = result;
 
-    strftime(buffer, BUFFER_SIZE, "%R", item->arrival_time);
-    len = strlen(buffer);
-    strncpy(pos, buffer, len);
-    pos += len;
-    // *(str+pos) = '\t';
-    *pos = '\t';
-    pos++;
+    strcpy(pos, item->trainNum);
+    pos += strlen(pos);
+    *(pos++) = separator;
 
-    // printf("%p %d #%s#%d\n", pos, len, str, strlen(str));
+    strcpy(pos, item->route);
+    pos += strlen(pos);
+    *(pos++) = separator;
 
-    strftime(buffer, BUFFER_SIZE, "%R", item->station_time);
-    len = strlen(buffer);
-    strncpy(pos, buffer, len);
-    pos += len;
-    // *(str+pos) = '\n';
-    *pos = '\n';
-    pos++;
+    strcpy(pos, weekDays);
+    pos += strlen(pos);
+    *(pos++) = separator;
 
-    *pos = '\0';
+    strcpy(pos, buffer);
+    pos += strlen(pos);
+    *(pos++) = '\0';
+
+    free(weekDays);
     free(buffer);
+    return result;
+}     
 
-    // printf("%p %d #%s#%d\n", pos, len, str, strlen(str));
-    return str;
-}
-
-struct Item* InitFromStr(char* str)
+struct Item* initFromStr(const char* str, const char separator)
 {
     struct Item *item = (struct Item*)malloc(sizeof(struct Item));
     int len;
     
-    int pos = 0;
+    //int pos = 0;
     len=0;
-    while(str[++len]!='\t');
-    item->train_num = (char*)malloc(sizeof(char)*(len));
-    strncpy(item->train_num, str, len);
-    item->train_num[len++] = '\0';
+    while(str[++len]!=separator);
+    item->trainNum = (char*)malloc(sizeof(char)*(len));
+    strncpy(item->trainNum, str, len);
+    item->trainNum[len++] = '\0';
 
-    pos+=len;
+    //pos+=len;
     str+=len;
 
     len = 0;
-    while(str[++len]!='\t');
-    item->dst = (char*)malloc(sizeof(char)*(len));
-    strncpy(item->dst, str, len);
-    item->dst[len++]='\0';
+    while(str[++len]!=separator);
+    item->route = (char*)malloc(sizeof(char)*(len));
+    strncpy(item->route, str, len);
+    item->route[len++]='\0';
 
-    pos+=len;
+    //pos+=len;
     str+=len;
 
     len = 0;
-    while(str[++len]!='\t');
-    str[len]='\0';
-    item->w_days = StrToWDays(str);
-    str[len]='\t';
-    pos+=len;
+    while(str[++len]!=separator);
+    char* buffer = (char*)malloc(sizeof(char)*(BUFFER_SIZE));
+    strncpy(buffer, str, len);
+    buffer[len] = '\0';
+    item->weekDays = strToWeekDays(buffer);
+   
+    // pos+=len;
     str+=len;
 
     len = 0;
-    item->arrival_time = (struct tm*)malloc(sizeof(struct tm));
-    while(str[++len]!='\t');
-    str[len]='\0';
-    TimeFromStr(item->arrival_time, str);
-    str[len]='\t';
+    item->arrivalTime = (struct tm*)malloc(sizeof(struct tm));
+    while(str[++len]!=separator);
+    strncpy(buffer, str, len);
+    buffer[len] = '\0';
+    item->arrivalTime = strToTime(str);
+    
 
-    pos+=len;
+    //pos+=len;
     str+=len;
 
     len = 0;
-    item->station_time = (struct tm*)malloc(sizeof(struct tm));
+    item->stationTime = (struct tm*)malloc(sizeof(struct tm));
     while(str[++len]!='\n');
-    str[len]='\0';
-    TimeFromStr(item->station_time, str);
-    str[len]='\n';
-
+    strncpy(buffer, str, len);
+    buffer[len] = '\0';
+    item->stationTime = strToTime(str);
+    
+    free(buffer);
     return item;
 }
+
+struct Item* initFromBin(FILE* F)
+{
+    size_t readCount = 0;
+
+    struct Item* item = (struct Item*)malloc(sizeof(struct Item));
+    int size;
+
+    readCount += fread(&size, sizeof(int), 1, F);
+    item->trainNum = (char*)malloc(sizeof(char)*(size+1));
+    readCount += fread(item->trainNum, size, 1, F);
+    item->trainNum[size] = '\0';
+
+    readCount += fread(&size, sizeof(int), 1, F);
+    item->route = (char*)malloc(sizeof(char)*(size+1));
+    readCount += fread(item->route, size, 1, F);
+    item->route[size] = '\0';
+
+    readCount += fread(&(item->weekDays), sizeof(unsigned char), 1, F);
+
+    item->arrivalTime = (struct tm*)malloc(sizeof(struct tm));
+    time_t tTime = 0;
+    readCount += fread(&tTime, sizeof(time_t), 1, F);
+    memcpy(item->arrivalTime, localtime(&tTime), sizeof(struct tm));
+
+    tTime = 0;
+    item->stationTime = (struct tm*)malloc(sizeof(struct tm));
+    readCount += fread(&tTime, sizeof(time_t), 1, F);
+    memcpy(item->stationTime, localtime(&tTime), sizeof(struct tm));
+
+    if (readCount == 7)
+        return item;
+
+    deleteItem(item);
+    return NULL;
+
+}
+
+int itemToBin(struct Item* item, FILE* F)
+{
+    int writeCount = 0;
+    
+    int size = strlen(item->trainNum);
+    writeCount += fwrite(&size, sizeof(int), 1, F);
+    writeCount += fwrite(item->trainNum, size, 1, F);
+
+
+    size = strlen(item->route);
+    writeCount += fwrite(&size, sizeof(int), 1, F);
+    writeCount += fwrite(item->route, size, 1, F);
+
+    writeCount += fwrite(&(item->weekDays), sizeof(unsigned char), 1, F);
+
+    time_t tTime = mktime(item->arrivalTime);
+    writeCount += fwrite(&tTime, sizeof(time_t), 1, F);
+
+    tTime = mktime(item->stationTime);
+    writeCount += fwrite(&tTime, sizeof(time_t), 1, F);
+    fflush(F);
+    return (writeCount==7);
+}   

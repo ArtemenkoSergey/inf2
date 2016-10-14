@@ -1,22 +1,51 @@
+#ifndef ARRAY_H
+#define ARRAY_H
 
+
+#include <stdio.h>		//	FILE, fopen(), fprintf(),
+#include <stdlib.h>		//	malloc(), free(), 
+#include <string.h>		//
+#include <time.h>		//
+
+
+
+#include "array.h"
+#include "item.h"
+#include "others.h"
 
 // структура массива
 struct Array
 {
-    int len;
+    int lenght;
     // int use;
     struct Item ** items;
 };
 
-// Функции работы с массивом
-int ArrayInit(struct Array* A, int len);
-int ArrayClear(struct Array*);
-int FindFree(struct Array*);
-int AddtoArray(struct Array*, struct Item*);
-int ArrayAddFromFile(struct Array* A, FILE* F);
-int DeleleFromArray(struct Array*, int index);
-void ArrayShow(struct Array*, FILE*);
-void ArrayTableShow(struct Array*, FILE*);
+enum FILE_ERRORS
+{
+	NO_ERROR = 0,
+	FILE_IS_NULL_ERROR = -1,
+	FILE_WRITE_ERROR = -2
 
-int ArraySave(struct Array*, FILE*);
+};
+
+// Функции работы с массивом
+struct Array* initArray(int lenght);
+void clearArray(struct Array*);
+int findFree(struct Array*);
+int addToArray(struct Array*, struct Item*);
+
+// переделать для бинарного файла
+struct Array* initArrayFromFile(FILE*);
+int saveArrayToFile(struct Array*, FILE*);
 int ArrayInitFromFile(struct Array*, FILE*);
+//###################################
+
+int deleleFromArray(struct Array*, int index);
+void showArray(struct Array*, FILE*);
+
+void tableShowArray(struct Array*, FILE*);
+
+
+
+#endif

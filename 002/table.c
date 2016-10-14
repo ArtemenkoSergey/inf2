@@ -1,43 +1,38 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>     //  va_start(), va_end(), va_arg()
+
 
 #include "table.h"
 
-#ifndef SYMBOL_TYPE_ERROR
-	#define SYMBOL_TYPE_ERROR -128
-#endif
 
-struct Table* createtable(int col_quantity, int* cols_size, char* cols_alignment)
+struct Table* createTable(int colQuantity, int* colsSize, char* colsAlignment)
 {
 	struct Table* tbl = (struct Table*)malloc(sizeof(struct Table));
-	tbl->col_quantity = col_quantity;
-	tbl->row_fill_char	= ' ';
-	tbl->col_seporator_char = '|';
-	tbl->row_seporator_char = '-';
-	tbl->crossing_char = '+';
+	tbl->colQuantity = colQuantity;
+	tbl->rowFillChar	= ' ';
+	tbl->colSeporatorChar = '-';
+	tbl->rowSeporatorChar = '|';
+	tbl->crossingChar = '+';
 	// tbl->ignore_col_size = 0;
-	tbl->cols_size = (int*)malloc(sizeof(int)*col_quantity);
-	memcpy(tbl->cols_size, cols_size, sizeof(int)*col_quantity);
-	tbl->cols_alignment = (char*)malloc(sizeof(char)*col_quantity);
-	memcpy(tbl->cols_alignment, cols_alignment, sizeof(int)*col_quantity);
+	tbl->colsSize = (int*)malloc(sizeof(int)*colQuantity);
+	memcpy(tbl->colsSize, colsSize, sizeof(int)*colQuantity);
+	tbl->colsAlignment = (char*)malloc(sizeof(char)*colQuantity);
+	memcpy(tbl->colsAlignment, colsAlignment, sizeof(int)*colQuantity);
 	// размер строки по 2 байта на символ для много байтных символов
 	// + 3 байта на каждый разделитеь колонок
 	// + 4 байта на границы таблицы + 2 байта '\n'+'\0'
-	tbl->_row_size = 3*(tbl->col_quantity-1)+4+2;
-	for (int i = 0; i < tbl->col_quantity; ++i)
-		tbl->_row_size += tbl->cols_size[i]*2;
+	tbl->_rowSize = 3*(tbl->colQuantity-1)+4+2;
+	for (int i = 0; i < tbl->colQuantity; ++i)
+		tbl->_rowSize += tbl->colsSize[i]*2;
 	return tbl;
 }
 
-void deletetable(struct Table* tbl)
+void deleteTable(struct Table* tbl)
 {
-	free(tbl->cols_size);
-	free(tbl->cols_alignment);
+	free(tbl->colsSize);
+	free(tbl->colsAlignment);
 	free(tbl);
 }
 
+//отладочная для простотра памяти
 void putmem(char* str, int s)
 {
 	for (int i = 0; i < s; ++i)
@@ -46,74 +41,46 @@ void putmem(char* str, int s)
 	}
 }
 
-char* getrowstr(struct Table* tbl, char* str, const char* cols)
+char* getRow(struct Table* tbl, int colsCount, ...)
 {
-	char* p = str;
-	char* sp = str;
-	// putmem(cols, tbl->_row_size);
-	// char* end = str + tbl->_row_size;
-	memset(str, tbl->row_fill_char, tbl->_row_size);
-	*(sp) = tbl->col_seporator_char;
-	// p = sp+1;
-	// printf("end %p\n", str + tbl->_row_size);
-	for (int i = 0; i < tbl->col_quantity; ++i)
+	char* row = (char*)malloc(sizeof(char)*tbl->_rowSize);
+	memset(row, tbl->rowFillChar, tbl->_rowSize);
+
+	va_list ap;
+	va_start(ap, colsCount);
+	
+	char* sp = row; // позиция разделителя столбцов.
+	char* colText;
+
+	*sp = tbl->rowSeporatorChar;	
+	for (int i = 0; i < colsCount; ++i)
 	{
-		int len = strlen(cols);
-		// printf("len %d ", len);
-		int shift, cpysize;
-		if (len > 0 )
-		{
-			// printf("cols %p ", cols);
-			shift = _getalignedpos(tbl->cols_size[i], tbl->cols_alignment[i], cols);
-			// printf("shift %d\n", shift);
-			if (shift != SYMBOL_TYPE_ERROR)
-			{
-				p = sp + 2 + shift;
-				if (len > str + tbl->_row_size - p - 3)
-					cpysize = str + tbl->_row_size - p - 3;
-				else
-					cpysize = len;
-				// printf("%d cpysize %d\n",i, cpysize );
-				strncpy(p, cols, cpysize);
-				p += cpysize;
-				*p = '\0';
-				sp += cpysize+(tbl->cols_size[i]-_mbstrlen(cols))+3;
-				*p = tbl->row_fill_char;
-				if (tbl->cols_alignment == 0)
-					sp += shift + (tbl->cols_size[i]-_mbstrlen(cols))%2;
-				
-			}
-			else
-				sp += tbl->cols_size[i]+3;
-		}
-		else
-		{
-			sp += tbl->cols_size[i]+3;
-		}
-		cols += len+1;
-		// printf("p %p sp %p c %c %02X\n", p, sp, *cols, (unsigned char)*cols);
-		if (p < sp)
-		{
-			*(sp) = tbl->col_seporator_char;
-		}
+		colText = va_arg(ap, char*);
+		sp = _setCol(tbl, i, row, sp, colText);
 	}
-	if (p > sp)
-		sp = p;
+
+	if (colsCount < tbl->colQuantity)
+	{
+		for (int i = colsCount; i < tbl->colQuantity; ++i)
+			sp = _setCol(tbl, i, row, sp, "");
+	}
+
 	*(++sp) = '\n';
 	*(++sp) = '\0';
-	// putmem(str, tbl->_row_size);
-	return str;
+
+	va_end(ap);
+	return row;
 }
 
-char* getseparatorrow(struct Table* tbl, char* str)
+char* getSeparatorRow(struct Table* tbl, char* str)
 {
 	char* p = str;
-	*(p++) = tbl->crossing_char;
-	for (int i = 0; i < tbl->col_quantity; ++i)
+	*(p++) = tbl->crossingChar;
+	for (int i = 0; i < tbl->colQuantity; ++i)
 	{
-		memset(p, tbl->row_seporator_char, tbl->cols_size[i]+2);
-		p+=tbl->cols_size[i]+2;
-		*(p++) = tbl->crossing_char;
+		memset(p, tbl->colSeporatorChar, tbl->colsSize[i]+2);
+		p+=tbl->colsSize[i]+2;
+		*(p++) = tbl->crossingChar;
 	}
 	*(p++) = '\n';
 	*(p++) = '\0';
@@ -121,50 +88,126 @@ char* getseparatorrow(struct Table* tbl, char* str)
 }
 
 
-void fputrow(struct Table* tbl, const char* cols, FILE* F)
+// void fputRow(struct Table* tbl, const char* cols, FILE* F)
+// {
+// 	char* str = (char*)malloc(sizeof(char)*tbl->_rowSize);
+// 	str = getRowStr(tbl, str, cols);
+	
+
+// 	fputs(str, F);
+// 	free(str);
+// }
+
+void fputRow(struct Table* tbl, FILE* fd, int colsCount, ...)
 {
-	char* str = (char*)malloc(sizeof(char)*tbl->_row_size);
-	str = getrowstr(tbl, str, cols);
-	fputs(str, F);
+
+	char* row = (char*)malloc(sizeof(char)*tbl->_rowSize);
+	memset(row, tbl->rowFillChar, tbl->_rowSize);
+
+	va_list ap;
+    va_start(ap, colsCount);
+
+    char* sp = row; // позиция разделителя столбцов.
+	char* colText;
+
+	*sp = tbl->rowSeporatorChar;	
+	for (int i = 0; i < colsCount; ++i)
+	{
+		colText = va_arg(ap, char*);
+		sp = _setCol(tbl, i, row, sp, colText);
+	}
+
+	if (colsCount < tbl->colQuantity)
+	{
+		for (int i = colsCount; i < tbl->colQuantity; ++i)
+			sp = _setCol(tbl, i, row, sp, "");
+	}
+
+	*(++sp) = '\n';
+	*(++sp) = '\0';
+
+	fputs(row, fd);
+
+    va_end(ap);
+    free(row);
+}
+
+void fputSeparatorRow(struct Table* tbl, FILE* fd)
+{
+	char* str = (char*)malloc(sizeof(char)*tbl->_rowSize);
+	str = getSeparatorRow(tbl, str);
+	fputs(str, fd);
 	free(str);
 }
 
-void fputseparatorrow(struct Table* tbl, FILE* F)
-{
-	char* str = (char*)malloc(sizeof(char)*tbl->_row_size);
-	str = getseparatorrow(tbl, str);
-	fputs(str, F);
-	free(str);
-}
-
-char* _setemprypow(struct Table* tbl, char* str)
+char* _setEmpryRow(struct Table* tbl, char* str)
 {
 	char* p = str;
-	*(p++) = tbl->row_seporator_char;
-	for (int i = 0; i < tbl->col_quantity; ++i)
+	*(p++) = tbl->rowSeporatorChar;
+	for (int i = 0; i < tbl->colQuantity; ++i)
 	{
-		memset(p, tbl->row_fill_char, tbl->cols_size[i]+2);
-		p+=tbl->cols_size[i]+2;
-		*(p++) = tbl->row_seporator_char;
+		memset(p, tbl->rowFillChar, tbl->colsSize[i]+2);
+		p+=tbl->colsSize[i]+2;
+		*(p++) = tbl->rowSeporatorChar;
 	}
 	*(p++) = '\n';
 	*(p++) = '\0';
 	return str;
 }
 
-int _getalignedpos(int col_size, int alignment, const char* str)
+
+int _getAlignedPos(int col_size, int alignment, const char* str)
 {
 	if (alignment == -1)
-		return 0;
-	int len = _mbstrlen(str);
+		return 2;
+	int len = _mbStrLen(str);
 	if (len<0) 
 		return SYMBOL_TYPE_ERROR;
 	if (alignment == 1)
-		return col_size-len;
-	return (col_size-len)/2;
+		return col_size-len+2;
+	return (col_size-len)/2+(col_size-len)%2+2;
 }
 
-int _mbstrlen(const char* str)
+char* _setCol(struct Table* tbl, int colNum, char* row, char* sp, const char* colText)
+{
+	char* p; 		// позиция содержимого колонки в строке.
+	int shift;		// сдвиг позиции содержимого колонки от разделителя
+	size_t cpySize;	// количество копируемых байт.
+
+	shift = _getAlignedPos(tbl->colsSize[colNum], tbl->colsAlignment[colNum], colText);
+	if (shift == SYMBOL_TYPE_ERROR)
+	{
+		sp += tbl->colsSize[colNum]+3;
+	}
+	else
+	{	
+		p = sp + shift;
+		// контроль выхода за начало строки таблицы (левую границу)
+		if (p < row)
+		{
+			colText -= p-row;
+			p = row;
+		}
+			// контроль переполнения строки таблицы
+		if (p+strlen(colText) > row+tbl->_rowSize)
+			cpySize = row+tbl->_rowSize - p;
+		else
+			cpySize = strlen(colText);
+		// printf("%d\n", cpySize);
+		strncpy(p, colText, cpySize);
+		// printf("%d %d\n", strlen(colText), _mbStrLen(colText) );
+		sp += cpySize+(tbl->colsSize[colNum]-_mbStrLen(colText))+3;
+		// sp += cpySize+(tbl->colsSize[colNum]-strlen(colText))+3;
+	}
+
+	if (p < sp)
+	{
+		*(sp) = tbl->rowSeporatorChar;
+	}
+	return sp;
+}
+
+int _mbStrLen(const char* str)
 {
 	int c = 0;
 	int l = 1;

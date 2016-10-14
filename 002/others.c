@@ -1,21 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <wchar.h>
-#include <wctype.h>
-#include <time.h>
-#include <ctype.h>
+
 
 #include "others.h"
 
-#ifndef BUFFER_SIZE
-    #define BUFFER_SIZE 1024
-#endif  
 
-const wchar_t RuWeekDays[8][3] = {L"ПН",L"ВТ",L"СР",L"ЧТ",L"ПТ",L"СБ",L"ВС",L""};
-const wchar_t EnWeekDays[8][3] = {L"MO",L"TU",L"WE",L"TH",L"FR",L"SA",L"SU",L""};
+#define BUFFER_SIZE 1024
 
-unsigned char StrToWDays(char* str)
+
+const wchar_t ruWeekDays[8][3] = {L"ПН",L"ВТ",L"СР",L"ЧТ",L"ПТ",L"СБ",L"ВС",L""};
+const wchar_t enWeekDays[8][3] = {L"MO",L"TU",L"WE",L"TH",L"FR",L"SA",L"SU",L""};
+
+unsigned char strToWeekDays(char* str)
 {
     unsigned char r = 0;
     wchar_t* word = NULL;
@@ -61,10 +55,10 @@ unsigned char isWeekDay(wchar_t* ws)
 {
     unsigned char r = 0;
     unsigned char m = 1;
-    for (int i = 0; RuWeekDays[i][0]!='\0' && r==0; ++i)
+    for (int i = 0; ruWeekDays[i][0]!='\0' && r==0; ++i)
     {
-        // fputs(RuWeekDays[i], stdout);
-        if (0==wcscmp(ws, RuWeekDays[i]) || 0==wcscmp(ws, EnWeekDays[i]))
+        // fputs(ruWeekDays[i], stdout);
+        if (0==wcscmp(ws, ruWeekDays[i]) || 0==wcscmp(ws, enWeekDays[i]))
         {
             r = r | m;
             // fputs(" OK", stdout);
@@ -76,53 +70,61 @@ unsigned char isWeekDay(wchar_t* ws)
     return r;
 }
 
-int WDaysToStr(unsigned char wd, char* str, int len)
+char* weekDaysToStr(unsigned char weekDays)
 {
     // char* p = str;
-    int l = 0;
+    int l = sizeof(ruWeekDays)/sizeof(ruWeekDays[0]);
+    int size = 0; // считаем максимальную длинну строки с днями недели.
+    printf("l=%d\n", l);
+    for (int i = 0; i < l; ++i)
+        size += wcslen(ruWeekDays[i])+1;
+    char* buffer = (char*)malloc(sizeof(char)*size);
+    char* pos = buffer;
     int i = 0;
-    wd = wd & (~0x80);
-    char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
-    for (unsigned char m = 1; m < 0x80 && len>=3; i++, m=m << 1)
+    weekDays = weekDays & (~0x80); // убираем лишний бит если он есть
+
+    for (unsigned char mask = 1; mask < 0x80; i++, mask <<= 1)
     {
-        if (wd & m)
+        if (weekDays & mask)
         {
-            l = wcslen(RuWeekDays[i]);
-            wcstombs(buffer, RuWeekDays[i], l*3);
-            l = strlen(buffer);
-            strncpy(str, buffer, l);
-            str += l;
-            *(str++) = ' ';
-            len -= l+1;
-            wd = wd & (~m);
+            l = wcslen(ruWeekDays[i]);
+            wcstombs(pos, ruWeekDays[i], l*3);
+            l = strlen(pos);
+            pos += l;
+            *(pos++) = ' ';
+            weekDays = weekDays & (~mask);
         }
     }
-    *(--str) = '\0';
-    free(buffer);
-    if (wd)
-        return -1;
-    else
-        return 0;
+    *(--pos) = '\0';
+
+    if (weekDays !=0 )
+    {
+        free(buffer);
+        return NULL;
+    }
     
+    size = pos - buffer;
+    char* result = (char*)malloc(sizeof(char)*size);
+    strcpy(result, buffer);
+
+    free(buffer);
+    return result;
 }
 
-int TimeFromStr(struct tm* tm, char* str)
+struct tm* strToTime(const char* str)
 {
     // char tmp[6] = {0};
+    struct tm* tm = (struct tm*)malloc(sizeof(struct tm));
     int t[2] = {0};
-    char* digit = NULL;
-    char tmp;
+    const char* digit = NULL;
     int c;
     for (c=0; c<2; str++)
     {
-        if (digit)
+        if (digit != NULL)
         {
             if (!isdigit(*str))
             {   
-                tmp = *str;
-                *str = '\0';
                 t[c++] = atoi(digit);
-                *str = tmp;
                 digit = NULL;
             }
         }
@@ -140,15 +142,17 @@ int TimeFromStr(struct tm* tm, char* str)
     }
 
     if (c<1 || t[0]<0 || t[0]>23 || t[1]<0 || t[1]>59)
-        return -1;
-    
+    {
+        free(tm);
+        return NULL;
+    }
     tm->tm_hour = t[0];
     tm->tm_min = t[1];
 
-    return 0;
+    return tm;
 }
 
-char* InputFileName(char* name)
+char* inputFileName(char* name)
 {
     
     // ClearStdin();
@@ -172,7 +176,7 @@ char* InputFileName(char* name)
     return name;
 }
 
-int mbstrlen(const char* str)
+int mbStrLen(const char* str)
 {
     int c = 0;
     int l = 1;
@@ -188,7 +192,7 @@ int mbstrlen(const char* str)
         return l;
 }
 
-char* IntToStr(char* str, int num)
+char* intToStr(char* str, int num)
 {
     int l = 1;
     char* p = str;
