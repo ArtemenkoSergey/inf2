@@ -140,22 +140,6 @@ void fputSeparatorRow(struct Table* tbl, FILE* fd)
 	free(str);
 }
 
-char* _setEmpryRow(struct Table* tbl, char* str)
-{
-	char* p = str;
-	*(p++) = tbl->rowSeporatorChar;
-	for (int i = 0; i < tbl->colQuantity; ++i)
-	{
-		memset(p, tbl->rowFillChar, tbl->colsSize[i]+2);
-		p+=tbl->colsSize[i]+2;
-		*(p++) = tbl->rowSeporatorChar;
-	}
-	*(p++) = '\n';
-	*(p++) = '\0';
-	return str;
-}
-
-
 int _getAlignedPos(int col_size, int alignment, const char* str)
 {
 	if (alignment == -1)
@@ -200,7 +184,7 @@ char* _setCol(struct Table* tbl, int colNum, char* row, char* sp, const char* co
 		// sp += cpySize+(tbl->colsSize[colNum]-strlen(colText))+3;
 	}
 
-	if (p < sp)
+	if (p+cpySize < sp)
 	{
 		*(sp) = tbl->rowSeporatorChar;
 	}

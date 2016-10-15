@@ -16,7 +16,7 @@ unsigned char strToWeekDays(char*);
 unsigned char isWeekDay(wchar_t*);
 
 //ПЕРЕДЕЛАТЬ в char* weekDayToStr(unsigned char weekDay);
-char* weekDaysToStr(unsigned char weekDays);
+char* weekDaysToStr(unsigned char weekDays, char* buffer);
 
 //Работа со временем
 struct tm* strToTime(const char* str);

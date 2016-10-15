@@ -70,17 +70,19 @@ unsigned char isWeekDay(wchar_t* ws)
     return r;
 }
 
-char* weekDaysToStr(unsigned char weekDays)
+char* weekDaysToStr(unsigned char weekDays, char* buffer)
 {
     // char* p = str;
-    int l = sizeof(ruWeekDays)/sizeof(ruWeekDays[0]);
-    int size = 0; // считаем максимальную длинну строки с днями недели.
-    printf("l=%d\n", l);
-    for (int i = 0; i < l; ++i)
-        size += wcslen(ruWeekDays[i])+1;
-    char* buffer = (char*)malloc(sizeof(char)*size);
+    // int l = sizeof(ruWeekDays)/sizeof(ruWeekDays[0]);
+    // int size = 0; // считаем максимальную длинну строки с днями недели.
+    // printf("l=%d\n", l);
+    // for (int i = 0; i < l; ++i)
+    //     size += wcslen(ruWeekDays[i])+1;
+    // char* buffer = (char*)malloc(sizeof(char)*size);
     char* pos = buffer;
+    *pos = '\0';
     int i = 0;
+    int l;
     weekDays = weekDays & (~0x80); // убираем лишний бит если он есть
 
     for (unsigned char mask = 1; mask < 0x80; i++, mask <<= 1)
@@ -95,20 +97,21 @@ char* weekDaysToStr(unsigned char weekDays)
             weekDays = weekDays & (~mask);
         }
     }
-    *(--pos) = '\0';
+    if (pos != buffer)
+        *(--pos) = '\0';
 
-    if (weekDays !=0 )
-    {
-        free(buffer);
-        return NULL;
-    }
+    // if (weekDays !=0 )
+    // {
+    //     free(buffer);
+    //     return NULL;
+    // }
     
-    size = pos - buffer;
-    char* result = (char*)malloc(sizeof(char)*size);
-    strcpy(result, buffer);
+    // size = pos - buffer;
+    // char* result = (char*)malloc(sizeof(char)*size);
+    // strcpy(result, buffer);
 
-    free(buffer);
-    return result;
+    // free(buffer);
+    return buffer;
 }
 
 struct tm* strToTime(const char* str)
@@ -192,16 +195,31 @@ int mbStrLen(const char* str)
         return l;
 }
 
-char* intToStr(char* str, int num)
+char* intToStr(char* s, int n)
 {
-    int l = 1;
-    char* p = str;
-    for (int i = num; i > 10; i/=10, l*=10);
-    for  (; l>0 ; l/=10)
+    int i, sign;
+    if ((sign = n) < 0)    
+        n = -n;                
+    i = 0;
+    do 
+    {               
+        s[i++] = n % 10 + '0';   
+    } while ((n /= 10) > 0);     
+    if (sign < 0)
+         s[i++] = '-';
+    s[i--] = '\0';
+
+    int j = 0;
+    char c;
+    while(j<i)
     {
-        *(p++) = num/l+'0';
-         num=num%l;
+        c = s[j];
+        s[j] = s[i];
+        s[i] = c;
+        j++;
+        i--;
     }
-    *p = '\0';
-    return str;
+
+
+    return s;
 }

@@ -96,30 +96,29 @@ void deleteItem(struct Item* item)
     free(item);
 }
 
-void showItem(struct Item* item, FILE* F)
+void showItem(struct Item* item, FILE* fd)
 {
     char* buffer = (char*)malloc(sizeof(char)*BUFFER_SIZE);
-    fputs("\nномер поезда:\t\t", F);
-    fputs(item->trainNum, F);
+    fputs("\nномер поезда:\t\t", fd);
+    fputs(item->trainNum, fd);
     
-    fputs("\nпункт назначения:\t", F);
-    fputs(item->route, F);
+    fputs("\nпункт назначения:\t", fd);
+    fputs(item->route, fd);
 
-    fputs("\nдни следования:\t\t", F);
+    fputs("\nдни следования:\t\t", fd);
     // ShowWDays(item->weekDays, F);
-    char* weekDays = weekDaysToStr(item->weekDays);
-    fputs(weekDays, F);
-    free(weekDays);
+    weekDaysToStr(item->weekDays, buffer);
+    fputs(buffer, fd);
 
-    fputs("\nвремя прибытия:\t\t", F);
+    fputs("\nвремя прибытия:\t\t", fd);
     strftime(buffer, BUFFER_SIZE, "%R", item->arrivalTime);
-    fputs(buffer, F);
+    fputs(buffer, fd);
 
-    fputs("\nвремя стоянки:\t\t", F);
+    fputs("\nвремя стоянки:\t\t", fd);
     strftime(buffer, BUFFER_SIZE, "%R", item->stationTime);
-    fputs(buffer, F);
+    fputs(buffer, fd);
 
-    fputc('\n',F);
+    fputc('\n',fd);
     free(buffer);
 }
 
@@ -135,7 +134,8 @@ char* itemToStr(const struct Item* item, const char separator)
     size += strlen(item->trainNum) + 1;
     size += strlen(item->route)+1;
     
-    char* weekDays = weekDaysToStr(item->weekDays);
+    char* weekDays = (char*)malloc(sizeof(char)*7*3);
+    weekDaysToStr(item->weekDays, weekDays);
 
     size += strlen(weekDays)+1;
 
@@ -234,6 +234,11 @@ struct Item* initFromBin(FILE* F)
     int size;
 
     readCount += fread(&size, sizeof(int), 1, F);
+    if (size == 0)
+    {
+        free(item);
+        return NULL;
+    }
     item->trainNum = (char*)malloc(sizeof(char)*(size+1));
     readCount += fread(item->trainNum, size, 1, F);
     item->trainNum[size] = '\0';
@@ -284,5 +289,6 @@ int itemToBin(struct Item* item, FILE* F)
     tTime = mktime(item->stationTime);
     writeCount += fwrite(&tTime, sizeof(time_t), 1, F);
     fflush(F);
-    return (writeCount==7);
+    printf("writeCount=%d\n", writeCount);
+    return (writeCount!=7);
 }   
