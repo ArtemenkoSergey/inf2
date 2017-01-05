@@ -15,30 +15,30 @@ int main(int argc, char const *argv[])
 
 	const int fixSize = 8;			// размер фиксированного блока памяти
 	const int maxVariableSize = 16;	// максимальный размер блока памяти переменного размера
-	const int minVariableSize = 4;	// минимальный размер блока памяти переменнго размера
+	const int minVariableSize = 4;	// минимальный размер блока памяти переменного размера
 
 	srand(time(NULL)); // установка генератора псевдослучайных чисел
 
-	clock_t sumAllocTime;	// общее время затраченое на выделение N блоков памяти
+	clock_t sumAllocTime;	// общее время затраченное на выделение N блоков памяти
 	clock_t avgAllocTime;	// среднее время на выделение блока памяти
 	clock_t minAllocTime;	// минимальное время на выделение блока памяти
 	clock_t maxAllocTime;	// максимальное время на выделение блока памяти
 
-	clock_t sumFreeTime;	// общее время затраченое на освобождение N блоков памяти
+	clock_t sumFreeTime;	// общее время затраченное на освобождение N блоков памяти
 	clock_t avgFreeTime;	// среднее время на освобождение блока памяти
 	clock_t minFreeTime;	// минимальное время на освобождение блока памяти
 	clock_t maxFreeTime;	// максимальное время на освобождение блока памяти
 
-	clock_t sT, dT;			// вспомагательные переменные для измерения времени.
-	unsigned int count, sum, avg;	// счетчик, накопитель cуммы, хранилище среднего 
-	struct MemElem* freeElem;	// и указатель для подсчета количества свободнх элементов и их суммы
+	clock_t sT, dT;			// вспомогательные переменные для измерения времени.
+	unsigned int count, sum, avg;	// счетчик, накопитель для cуммы, хранилище среднего 
+	struct MemElem* freeElem;		// и указатель для подсчета количества свободных элементов и их суммы
 
 	void** ptrArray = malloc(sizeof(void*)*N);		// массив указателей на выделенные блоки памяти
 
 	clock_t startTime = clock();	// начало работы программы
 	struct MemDump mem = memInit(N*maxVariableSize*5);
 	
-	// работаем с блоками фиксиованного размера
+	// работаем с блоками фиксированного размера
 	printf("Тестирование с блоками памяти фиксированного размера\n");
 	// устанавливаем начальные значения для сбора статистики.
 	sumAllocTime = 0;
@@ -67,15 +67,15 @@ int main(int argc, char const *argv[])
 		freeElem = freeElem->next;
 	}
 
-	printf("Выделенно %d блоков памяти\n", N);
-	printf("Общее время выделения N блоков памяти:\t\t %.5f милисекунд\n", ((double)sumAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Среднее время выделения блока памяти:\t\t %.5f милисекунд\n", ((double)avgAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Минимальное время выделения блока памяти:\t %.5f милисекунд\n", ((double)minAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Максимальное время выделения блока памяти:\t %.5f милисекунд\n", ((double)maxAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Выделено %d блоков памяти\n", N);
+	printf("Общее время выделения N блоков памяти:\t\t %.5f миллисекунд\n", ((double)sumAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Среднее время выделения блока памяти:\t\t %.5f миллисекунд\n", ((double)avgAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Минимальное время выделения блока памяти:\t %.5f миллисекунд\n", ((double)minAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Максимальное время выделения блока памяти:\t %.5f миллисекунд\n", ((double)maxAllocTime/CLOCKS_PER_SEC)*1000);
 	printf("количество свободных фрагментов памяти %d\n", count);
 	printf("\n");
 
-	// освобождение и повтороное выделение блоков памяти
+	// освобождение и повторное выделение блоков памяти
 	printf("Освобождение и повторное выделение блоков памяти фиксированного размера\n");
 	// устанавливаем начальные значения для сбора статистики.
 	sumAllocTime = 0;
@@ -128,16 +128,16 @@ int main(int argc, char const *argv[])
 	}
 	avg = (count==0)?0:sum/count;
 
-	printf("Освобожденно и заново выделенно %d блоков памяти\n", N);
-	printf("Общее время выделения N блоков памяти:\t\t %.5f милисекунд\n", ((double)sumAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Среднее время выделения блока памяти:\t\t %.5f милисекунд\n", ((double)avgAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Минимальное время выделения блока памяти:\t %.5f милисекунд\n", ((double)minAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Максимальное время выделения блока памяти:\t %.5f милисекунд\n", ((double)maxAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Освобождено и заново выделено %d блоков памяти\n", N);
+	printf("Общее время выделения N блоков памяти:\t\t %.5f миллисекунд\n", ((double)sumAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Среднее время выделения блока памяти:\t\t %.5f миллисекунд\n", ((double)avgAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Минимальное время выделения блока памяти:\t %.5f миллисекунд\n", ((double)minAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Максимальное время выделения блока памяти:\t %.5f миллисекунд\n", ((double)maxAllocTime/CLOCKS_PER_SEC)*1000);
 	printf("\n");
-	printf("Общее время освобождения N блоков памяти:\t %.5f милисекунд\n", ((double)sumFreeTime/CLOCKS_PER_SEC)*1000);
-	printf("Среднее время освобождения блока памяти:\t %.5f милисекунд\n", ((double)avgFreeTime/CLOCKS_PER_SEC)*1000);
-	printf("Минимальное время освобождения блока памяти:\t %.5f милисекунд\n", ((double)minFreeTime/CLOCKS_PER_SEC)*1000);
-	printf("Максимальное время освобождения блока памяти:\t %.5f милисекунд\n", ((double)maxFreeTime/CLOCKS_PER_SEC)*1000);
+	printf("Общее время освобождения N блоков памяти:\t %.5f миллисекунд\n", ((double)sumFreeTime/CLOCKS_PER_SEC)*1000);
+	printf("Среднее время освобождения блока памяти:\t %.5f миллисекунд\n", ((double)avgFreeTime/CLOCKS_PER_SEC)*1000);
+	printf("Минимальное время освобождения блока памяти:\t %.5f миллисекунд\n", ((double)minFreeTime/CLOCKS_PER_SEC)*1000);
+	printf("Максимальное время освобождения блока памяти:\t %.5f миллисекунд\n", ((double)maxFreeTime/CLOCKS_PER_SEC)*1000);
 	printf("\n");
 	printf("Всего выделено %d байт памяти\n", mem.size);
 	printf("Размер свободной части кучи %u\n", mem.freeMem->size);
@@ -181,15 +181,15 @@ int main(int argc, char const *argv[])
 		freeElem = freeElem->next;
 	}
 
-	printf("Выделенно %d блоков памяти\n", N);
-	printf("Общее время выделения N блоков памяти:\t\t %.5f милисекунд\n", ((double)sumAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Среднее время выделения блока памяти:\t\t %.5f милисекунд\n", ((double)avgAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Минимальное время выделения блока памяти:\t %.5f милисекунд\n", ((double)minAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Максимальное время выделения блока памяти:\t %.5f милисекунд\n", ((double)maxAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Выделено %d блоков памяти\n", N);
+	printf("Общее время выделения N блоков памяти:\t\t %.5f миллисекунд\n", ((double)sumAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Среднее время выделения блока памяти:\t\t %.5f миллисекунд\n", ((double)avgAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Минимальное время выделения блока памяти:\t %.5f миллисекунд\n", ((double)minAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Максимальное время выделения блока памяти:\t %.5f миллисекунд\n", ((double)maxAllocTime/CLOCKS_PER_SEC)*1000);
 	printf("количество свободных фрагментов памяти %d\n", count);
 	printf("\n");
 
-	// освобождение и повтороное выделение блоков памяти
+	// освобождение и повторное выделение блоков памяти
 	printf("Освобождение и повторное выделение блоков памяти переменного (случайного) размера\n");
 	// устанавливаем начальные значения для сбора статистики.
 	sumAllocTime = 0;
@@ -230,16 +230,16 @@ int main(int argc, char const *argv[])
 	avgAllocTime = sumAllocTime/N;
 	avgFreeTime = sumFreeTime/N;
 
-	printf("Освобожденно и заново выделенно %d блоков памяти\n", N);
-	printf("Общее время выделения N блоков памяти:\t\t %.5f милисекунд\n", ((double)sumAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Среднее время выделения блока памяти:\t\t %.5f милисекунд\n", ((double)avgAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Минимальное время выделения блока памяти:\t %.5f милисекунд\n", ((double)minAllocTime/CLOCKS_PER_SEC)*1000);
-	printf("Максимальное время выделения блока памяти:\t %.5f милисекунд\n", ((double)maxAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Освобождено и заново выделено %d блоков памяти\n", N);
+	printf("Общее время выделения N блоков памяти:\t\t %.5f миллисекунд\n", ((double)sumAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Среднее время выделения блока памяти:\t\t %.5f миллисекунд\n", ((double)avgAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Минимальное время выделения блока памяти:\t %.5f миллисекунд\n", ((double)minAllocTime/CLOCKS_PER_SEC)*1000);
+	printf("Максимальное время выделения блока памяти:\t %.5f миллисекунд\n", ((double)maxAllocTime/CLOCKS_PER_SEC)*1000);
 	printf("\n");
-	printf("Общее время освобождения N блоков памяти:\t %.5f милисекунд\n", ((double)sumFreeTime/CLOCKS_PER_SEC)*1000);
-	printf("Среднее время освобождения блока памяти:\t %.5f милисекунд\n", ((double)avgFreeTime/CLOCKS_PER_SEC)*1000);
-	printf("Минимальное время освобождения блока памяти:\t %.5f милисекунд\n", ((double)minFreeTime/CLOCKS_PER_SEC)*1000);
-	printf("Максимальное время освобождения блока памяти:\t %.5f милисекунд\n", ((double)maxFreeTime/CLOCKS_PER_SEC)*1000);
+	printf("Общее время освобождения N блоков памяти:\t %.5f миллисекунд\n", ((double)sumFreeTime/CLOCKS_PER_SEC)*1000);
+	printf("Среднее время освобождения блока памяти:\t %.5f миллисекунд\n", ((double)avgFreeTime/CLOCKS_PER_SEC)*1000);
+	printf("Минимальное время освобождения блока памяти:\t %.5f миллисекунд\n", ((double)minFreeTime/CLOCKS_PER_SEC)*1000);
+	printf("Максимальное время освобождения блока памяти:\t %.5f миллисекунд\n", ((double)maxFreeTime/CLOCKS_PER_SEC)*1000);
 	printf("\n");
 	printf("Всего выделено %d байт памяти\n", mem.size);
 	printf("Размер свободной части кучи %u\n", mem.freeMem->size);

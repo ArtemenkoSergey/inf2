@@ -32,15 +32,11 @@ void* myMalloc(unsigned int size, struct MemDump dump)
 			exit(-1);
 		}
 	}
-	*((char*)result) = 0xAA;
-	for(unsigned int i = 1; i<size; i++)
-		*((char*)result+i) = 0;
 	return (void*)result;
 }
 
-enum MemFuncErrors myFree(void* ptr, struct MemDump dump)
+void myFree(void* ptr, struct MemDump dump)
 {
-	enum MemFuncErrors result = OK;
 	if (ptr > dump.ptr || ptr < dump.freeMem->ptr)
 	{
 		unsigned int size = *((unsigned int*)ptr - 1);
@@ -59,7 +55,7 @@ enum MemFuncErrors myFree(void* ptr, struct MemDump dump)
 			// // проверка на свободного соседа
 			// for(struct MemElem* elem = dump.freeMem; elem != NULL && ptr != NULL ; elem = elem->next)
 			// {
-			// 	// сосед с права сободен
+			// 	// сосед справа сободен
 			// 	if (ptr+size+sizeof(unsigned int) == elem->ptr)
 			// 	{
 			// 		elem->ptr = ptr;
@@ -77,7 +73,6 @@ enum MemFuncErrors myFree(void* ptr, struct MemDump dump)
 			{
 				struct MemElem* newElem = dump.freeMem-1;
 				struct MemElem* endOfDump = dump.freeMem->ptr+dump.freeMem->size;
-				// printf("newElem %p, endOfDump %p\n", newElem, endOfDump );
 				// ищем пустое место под новый элемент списка
 				for(; newElem->ptr != NULL && newElem >= endOfDump ; newElem--);
 				// выделяем место для нового участка свободной памяти
@@ -103,8 +98,6 @@ enum MemFuncErrors myFree(void* ptr, struct MemDump dump)
 			printf("myFree PtrError\n");
 			exit(-1);
 		}
-	*((unsigned int*)ptr) = 0xFF;
-	return result;
 }
 
 struct MemDump memInit(unsigned int size)
