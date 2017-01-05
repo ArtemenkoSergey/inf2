@@ -1,6 +1,6 @@
 #include "memFunc.h"
 #include <stdio.h>		//	printf()
-#include <stdlib.h>		//	srand() rand()
+#include <stdlib.h>		//	srand() rand() atoi()
 #include <time.h>		//	clock_t clock() time()
 
 int main(int argc, char const *argv[])
@@ -40,6 +40,7 @@ int main(int argc, char const *argv[])
 	
 	// работаем с блоками фиксированного размера
 	printf("Тестирование с блоками памяти фиксированного размера\n");
+	printf("Размер блока памяти фиксированного размера %d\n", fixSize);
 	// устанавливаем начальные значения для сбора статистики.
 	sumAllocTime = 0;
 	avgAllocTime = 0;
@@ -153,6 +154,7 @@ int main(int argc, char const *argv[])
 
 	// работаем с блоками переменного размера
 	printf("Тестирование с блоками памяти переменного (случайного) размера\n");
+	printf("Размер бока памяти переменного размера от %d до %d\n", minVariableSize, maxVariableSize);
 	// устанавливаем начальные значения для сбора статистики.
 	sumAllocTime = 0;
 	avgAllocTime = 0;
